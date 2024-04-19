@@ -278,6 +278,7 @@ def is_cpu(x):
 @dataclasses.dataclass
 class IRNode:
     _current_origins: ClassVar[Set[Any]] = set()
+    _origins_fx = list()
 
     @staticmethod
     @contextlib.contextmanager
@@ -291,6 +292,9 @@ class IRNode:
 
     def __post_init__(self):
         self.origins = set(self._current_origins)
+        for node in self.origins:
+            if node not in self._origins_fx:
+                self._origins_fx.append(node)
         self.traceback = traceback.format_stack() if config.debug_ir_traceback else None
 
     def get_traceback(self):
@@ -2485,6 +2489,7 @@ class ShapeAsConstantBuffer(IRNode):
 @dataclasses.dataclass
 class ComputedBuffer(Buffer):
     data: Loops
+    IncludeNodes = list()
 
     @cache_on_self
     def num_reads(self):

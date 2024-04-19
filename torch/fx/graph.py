@@ -295,6 +295,9 @@ class CodeGen:
         Given the output arguments, generates the return statement of the FX function.
         Note: The returned statement should not be indented.
         """
+        if isinstance(output_args, torch.fx.node.Node) and 'val' in output_args.meta.keys():
+            if not isinstance(output_args.meta['val'], (tuple, list)):
+                output_args = (output_args,)
         return f'return {repr(output_args)}'
 
     def process_inputs(self, *args: Any) -> Any:

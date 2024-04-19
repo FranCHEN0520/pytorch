@@ -325,7 +325,12 @@ def compile_fx_inner(
         cudagraphs = BoxedBool(config.triton.cudagraphs)
 
     # Inputs to fx_codegen_and_compile
+    from torch._dynamo.repro.after_aot import save_graph_repro
     graph_args = [gm, example_inputs]
+
+    # with open("test_print_gm.py", 'w') as fd:
+    #     save_graph_repro(fd, gm, example_inputs, "inductor")
+
     graph_kwargs = {
         "cudagraphs": cudagraphs,
         "num_fixed": num_fixed,
@@ -562,7 +567,7 @@ def fx_codegen_and_compile(
                         )
                     else:
                         context.output_strides.append(None)
-            compiled_fn = graph.compile_to_fn()
+            compiled_fn = graph.compile_to_fn(gm) # add gm
 
             if graph.disable_cudagraphs:
                 BoxedBool.disable(cudagraphs)

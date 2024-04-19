@@ -2723,7 +2723,7 @@ class TritonScheduling(BaseScheduling):
 
         return node_schedule
 
-    def codegen_nodes(self, nodes):
+    def codegen_nodes(self, nodes, gm): # add gm
         """
         Given a set of pre-fused nodes, generate a Triton kernel.
         """
@@ -2734,7 +2734,7 @@ class TritonScheduling(BaseScheduling):
         if schedule_log.isEnabledFor(logging.DEBUG):
             schedule_log.debug("Schedule:\n %s", node_schedule)
 
-        return self.codegen_node_schedule(node_schedule, numel, rnumel)
+        return self.codegen_node_schedule(node_schedule, numel, rnumel, gm) # add gm
 
     @staticmethod
     def reduction_hint(node):

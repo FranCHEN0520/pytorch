@@ -749,16 +749,21 @@ class {module_name}(torch.nn.Module):
         res = GraphModule(self, self.graph)
         res.meta = getattr(self, 'meta', {})
         return res
+    
+    
 
     @compatibility(is_backward_compatible=False)
-    def print_readable(self, print_output=True):
+    def print_readable(self, print_output=True, input_kernel_name = None):
         """
         Return the Python code generated for current GraphModule and its children GraphModules
         """
         verbose_python_code = self._graph.python_code(root_module='self', verbose=True)
         module_code = verbose_python_code.src
         module_code = module_code.lstrip('\n')
-        module_code = f"class {self._get_name()}(torch.nn.Module):\n" + module_code
+        if input_kernel_name == None:
+            module_code = f"class {self._get_name()}(torch.nn.Module):\n" + module_code
+        else:
+            module_code = f"class {input_kernel_name}(torch.nn.Module):\n" + module_code
         module_code = _addindent(module_code, 4)
 
         submodule_code_list = [""]

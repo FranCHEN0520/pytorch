@@ -25,6 +25,8 @@ from torch.fx.graph_module import GraphModule
 from torch.fx.passes.shape_prop import _extract_tensor_metadata, TensorMetadata
 from torch.fx.passes.tools_common import legalize_graph
 from torch.utils._pytree import tree_map
+from torch.fx.node import Node
+import copy
 
 from . import config, ir  # noqa: F811, this is needed
 from .scheduler import (
@@ -174,6 +176,45 @@ def create_fx_from_snodes(snodes: List[BaseSchedulerNode]) -> fx.Graph:
     graph.output(outputs[0] if len(outputs) == 1 else tuple(outputs))
     return graph
 
+def create_fx_from_fxnodes(snodes: List[BaseSchedulerNode]) -> (fx.Graph, fx.Graph, List):
+    graph = torch.fx.Graph()
+    nodes = []
+    argsnodes = []
+    placeholdernode = []
+    for snode in snodes:
+        nodes.extend(snode.node.IncludeNodes)
+    for node in nodes:
+        argsnodes.extend([n for n in node.args if isinstance(n, Node)])
+    placeholdernode = list(set(argsnodes)-set(nodes))
+    placeholdernode.extend([n for n in nodes if n.op == 'placeholder'])
+    placeholderlist = placeholdernode.copy()
+    args = []
+    graph_old = nodes[0].graph
+    for node in nodes:
+        is_empty = not any(n in placeholdernode for n in node.args)
+        if is_empty:
+            new_node = graph.node_copy(node)
+            if node.op == 'placeholder':
+                placeholderlist.remove(node)
+        else:
+            new_node = graph.node_copy(node)
+            for n in node.args:
+                if isinstance(n, Node) and n in placeholderlist:
+                    with graph.inserting_before(new_node):
+                        first_node = graph.create_node('placeholder', n.name)
+                        first_node.args = tuple()
+                        new_node.replace_all_uses_with(first_node)
+                    placeholderlist.remove(n)
+                else:
+                    first_node = n
+                args.append(first_node)
+            new_node.args = tuple(args)
+            # graph.erase_node(new_node)
+            # node.args = tuple()
+
+        if node == nodes[-1]:
+            graph.output(new_node)
+    return graph, graph_old, placeholdernode
 
 @contextlib.contextmanager
 def enable_aot_logging():

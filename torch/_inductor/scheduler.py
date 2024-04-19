@@ -1654,7 +1654,7 @@ class Scheduler:
             V.graph.wrapper_code.enter_context(last)
 
     @dynamo_timed
-    def codegen(self):
+    def codegen(self, gm): # add gm
         for node in self.nodes:
             self.enter_context(node)
             self.buffer_names_no_longer_needed.update(node.last_usage)
@@ -1687,7 +1687,7 @@ class Scheduler:
             elif node.is_foreach():
                 self.get_backend(device).codegen_foreach(node)
             elif isinstance(node, (FusedSchedulerNode, SchedulerNode)):
-                self.get_backend(device).codegen_nodes(node.get_nodes())
+                self.get_backend(device).codegen_nodes(node.get_nodes(), gm) # add gm
             else:
                 assert isinstance(node, NopKernelSchedulerNode)
                 node.allocate()
