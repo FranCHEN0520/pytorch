@@ -417,6 +417,9 @@ class triton:
     # extraction and minification functionality.
     # Valid values: "compile_error", "runtime_error", "accuracy"
     inject_relu_bug_TESTING_ONLY = None
+    
+    # Output the aten ops of kernels for users to do Performance comparison.
+    profiler_separate_kernel = True
 
 
 # create a directory containing lots of debug information

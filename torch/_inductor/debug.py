@@ -187,11 +187,17 @@ def create_fx_from_fxnodes(snodes: List[BaseSchedulerNode]) -> (fx.Graph, fx.Gra
         argsnodes.extend([n for n in node.args if isinstance(n, Node)])
     placeholdernode = list(set(argsnodes)-set(nodes))
     placeholdernode.extend([n for n in nodes if n.op == 'placeholder'])
+    removenode =[]
+    for n in placeholdernode:
+        if "_frozen_param" in n.name:
+            removenode.append(n)
+            nodes.insert(0, n)
+    placeholdernode = list(set(placeholdernode)-set(removenode))
     placeholderlist = placeholdernode.copy()
-    args = []
     graph_old = nodes[0].graph
     for node in nodes:
         is_empty = not any(n in placeholdernode for n in node.args)
+        args = []
         if is_empty:
             new_node = graph.node_copy(node)
             if node.op == 'placeholder':
